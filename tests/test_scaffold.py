@@ -15,6 +15,7 @@ _ENV_DEFAULTS = {
     "RESEARCHER_PROVIDER": "gemini",
     "RED_TEAM_PROVIDER": "anthropic",
     "CONTRARIAN_PROVIDER": "xai",
+    "CTO_PROVIDER": "cursor",
 }
 
 REQUIRED_PATHS = (
@@ -136,7 +137,8 @@ class ScaffoldTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertIn("phase 3", completed.stdout)
+        self.assertIn("phase 4", completed.stdout)
+        self.assertIn("cto=cursor", completed.stdout)
         self.assertIn("Live API calls: blocked", completed.stdout)
         self.assertNotIn("Bearer ", completed.stdout)
 

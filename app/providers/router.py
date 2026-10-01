@@ -11,6 +11,7 @@ DEFAULT_ROUTES = {
     "research": "gemini",
     "red_team": "anthropic",
     "contrarian": "xai",
+    "cto": "cursor",
 }
 
 PROVIDER_NAMES = ("openai", "anthropic", "gemini", "xai", "nvidia", "cursor")

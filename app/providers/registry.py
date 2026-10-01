@@ -19,6 +19,7 @@ _ROUTE_ENV = {
     "research": "RESEARCHER_PROVIDER",
     "red_team": "RED_TEAM_PROVIDER",
     "contrarian": "CONTRARIAN_PROVIDER",
+    "cto": "CTO_PROVIDER",
 }
 
 

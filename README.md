@@ -2,7 +2,7 @@
 
 Local, CEO-controlled software that runs a council of specialized model roles against one question. The human founder is the CEO. Agents research, critique, and recommend. They do not decide.
 
-Phase 3 runs four agents independently: strategist, researcher, red team, and contrarian. They do not see each other's answers. Debate is not implemented.
+Phase 4 runs five roles. Round 1 is independent. Round 2 shows each available agent the other round-1 analyses and asks for agreements and disagreements. A local step turns explicit disagreements into an unverified dispute list. Agreement is not a vote and is not evidence. Synthesis is not implemented.
 
 Default routes:
 
@@ -10,8 +10,9 @@ Default routes:
 - Researcher: Gemini
 - Red team: Anthropic
 - Contrarian: xAI
+- CTO: Cursor
 
-NVIDIA and Cursor adapters are included. Point a role at one with `STRATEGIST_PROVIDER`, `RESEARCHER_PROVIDER`, `RED_TEAM_PROVIDER`, or `CONTRARIAN_PROVIDER`. Cursor is an agent runtime, not a chat endpoint, and stays blocked until you authorize it.
+NVIDIA remains available as a role override. API keys stay empty until you add them. Authorization flags stay off, so no live call is sent.
 
 ## Architecture
 
@@ -19,9 +20,9 @@ NVIDIA and Cursor adapters are included. Point a role at one with `STRATEGIST_PR
 CEO
   -> CLI (app.main)
     -> Council session
-      -> Agents (orchestrator, strategist, researcher, red team, contrarian)
+      -> Agents (strategist, researcher, red team, contrarian, CTO)
         -> Model router
-          -> Provider adapters (OpenAI, Anthropic, Gemini, xAI)
+          -> Provider adapters (OpenAI, Anthropic, Gemini, xAI, NVIDIA, Cursor)
             -> Shared company files
               -> Decision memo
                 -> CEO approval
@@ -35,8 +36,8 @@ The request path stays short:
 
 - Local process. No dashboard, queue, or hosted service in V1.
 - Direct provider calls. No agent-framework hop in front of the model.
-- Round 1 agents run concurrently once providers exist.
-- One structured response per agent. No extra model call to reformat prose.
+- Round 1 agents run concurrently. Round 2 cross-examinations also run concurrently.
+- One structured response per agent per round. Disagreement detection is local and does not add a model call.
 - Timeouts are bounded. A failed provider is recorded and skipped.
 
 ## Setup
@@ -63,7 +64,7 @@ That command calls a provider only when that provider's key, model, and `*_API_A
 
 ## Current phase
 
-Phase 3 runs the four independent analyses and saves each result. Debate, synthesis, and CEO decision recording are not implemented.
+Phase 4 adds cross-examination and a dispute list. Synthesis and the CEO decision memo are not implemented. Live calls stay blocked until you add keys and set each authorization flag.
 
 ## Security
 
@@ -74,4 +75,4 @@ Phase 3 runs the four independent analyses and saves each result. Debate, synthe
 
 ## Limitations
 
-Phase 3 is the independent round. Debate, synthesis, and CEO decision recording are not implemented. Live calls were not made while building this phase because no API keys were present. Cursor requires the separate `cursor-sdk` package and is not installed by default.
+Phase 4 adds cross-examination and disagreement detection. Synthesis and CEO decision recording are not implemented. Live calls were not made. Keys are still empty. Cursor requires the separate `cursor-sdk` package before a live CTO call.

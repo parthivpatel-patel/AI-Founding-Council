@@ -22,7 +22,7 @@ The first working milestone is one verified provider and one agent. Remaining pr
 
 ## ADR-006 — Stubs are not implementations
 
-A module is implemented only when tests show that behavior. Debate and synthesis are still stubs.
+A module is implemented only when tests show that behavior. Synthesis is still a stub.
 
 ## ADR-007 — No invented price
 
@@ -31,3 +31,7 @@ Estimated cost stays null until a price table is verified. A call is not sent un
 ## ADR-008 — Four independent calls, six swappable providers
 
 Round 1 runs the strategist, researcher, red team, and contrarian at the same time. None of them receives another agent's answer. The default routes are OpenAI, Gemini, Anthropic, and xAI. NVIDIA NIM and the Cursor agent SDK are adapters a role can opt into. A missing or unauthorized provider is recorded as `AGENT_UNAVAILABLE` and does not cancel the other calls.
+
+## ADR-009 — Cross-examination is not a vote
+
+Round 2 runs only for agents that finished round 1. Each one sees the other round-1 analyses and none of the round-2 answers. Disputes are created only from disagreements an agent explicitly states. Matching claims are merged into one `UNVERIFIED` dispute. An empty dispute list means no disagreement was stated. It does not mean the claim is true. Cursor is the default CTO provider.

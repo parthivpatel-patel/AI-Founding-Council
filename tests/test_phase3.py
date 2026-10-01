@@ -185,14 +185,14 @@ class Gate:
     def enter(self, task: str) -> None:
         with self._lock:
             self.started.append(task)
-            if len(self.started) == 4:
+            if len(self.started) == 5:
                 self._release.set()
         if not self._release.wait(2):
             raise TimeoutError("independent calls did not overlap")
 
 
 class IndependentRoundTests(unittest.TestCase):
-    def test_four_agents_run_without_seeing_each_other(self) -> None:
+    def test_five_agents_run_without_seeing_each_other(self) -> None:
         root = Path(tempfile.mkdtemp())
         self.addCleanup(lambda: __import__("shutil").rmtree(root, ignore_errors=True))
         (root / "company").mkdir()
@@ -204,22 +204,26 @@ class IndependentRoundTests(unittest.TestCase):
             ("gemini", "RESEARCH_TOKEN"),
             ("anthropic", "RED_TEAM_TOKEN"),
             ("xai", "CONTRARIAN_TOKEN"),
+            ("cursor", "CTO_TOKEN"),
         ):
             providers[name] = _RecordingProvider(token, gate)
         router = ModelRouter(providers)
         results = run_independent_round("What should we investigate next?", router=router, root=root)
-        self.assertEqual([item.role for item in results], ["strategist", "researcher", "red_team", "contrarian"])
+        self.assertEqual(
+            [item.role for item in results],
+            ["strategist", "researcher", "red_team", "contrarian", "cto"],
+        )
         self.assertTrue(all(item.available for item in results))
-        self.assertEqual(sorted(gate.started), ["contrarian", "red_team", "research", "strategy"])
-        inputs = {provider.name: provider.requests[0].user_input for provider in providers.values()}
-        for name, text in inputs.items():
-            for token in ("STRATEGIST_TOKEN", "RESEARCH_TOKEN", "RED_TEAM_TOKEN", "CONTRARIAN_TOKEN"):
+        self.assertEqual(sorted(gate.started), ["contrarian", "cto", "red_team", "research", "strategy"])
+        inputs = {provider.token: provider.requests[0].user_input for provider in providers.values()}
+        for text in inputs.values():
+            for token in ("STRATEGIST_TOKEN", "RESEARCH_TOKEN", "RED_TEAM_TOKEN", "CONTRARIAN_TOKEN", "CTO_TOKEN"):
                 self.assertNotIn(token, text)
         saved = list((root / "council_logs").glob("*/*.json"))
-        self.assertEqual(len(saved), 4)
+        self.assertEqual(len(saved), 5)
         blob = "\n".join(path.read_text(encoding="utf-8") for path in saved)
         self.assertNotIn("test-key", blob)
-        self.assertIn("STRATEGIST_TOKEN", blob)
+        self.assertIn("CTO_TOKEN", blob)
 
 
 class _RecordingProvider:

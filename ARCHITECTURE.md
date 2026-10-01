@@ -47,7 +47,7 @@ Implemented in later phases, in this order:
 4. Red team against the strongest thesis.
 5. Synthesis and a CEO decision memo.
 
-The memo stays `PENDING` until the human CEO approves or rejects it. Agreement among models is not a vote and is not evidence.
+The memo stays `PENDING` until the human CEO approves or rejects it with `python -m app.main decide`. That command appends the decision log and Major Decisions. It does not call a model, authorize spending, or rewrite unknown fields. Agreement among models is not a vote and is not evidence.
 
 ## Evidence
 

@@ -22,7 +22,7 @@ The first working milestone is one verified provider and one agent. Remaining pr
 
 ## ADR-006 — Stubs are not implementations
 
-A module is implemented only when tests show that behavior. Synthesis is still a stub.
+A module is implemented only when tests show that behavior. The pending memo is covered by tests. Synthesis does not record the CEO decision.
 
 ## ADR-007 — No invented price
 
@@ -38,4 +38,8 @@ Round 2 runs only for agents that finished round 1. Each one sees the other roun
 
 ## ADR-010 — The memo stays pending
 
-Evidence resolution runs only for stated disputes and cannot mark them resolved. One red-team pass attacks the strategist thesis when that agent answered, otherwise the first thesis that exists. Agreement is not the selection rule. The decision memo is assembled from those records with `create_pending_memo`. Company state and the decision log stay unchanged.
+Evidence resolution runs only for stated disputes and cannot mark them resolved. One red-team pass attacks the strategist thesis when that agent answered, otherwise the first thesis that exists. Agreement is not the selection rule. The decision memo is assembled from those records with `create_pending_memo`. Company state and the decision log stay unchanged until the CEO records a decision.
+
+## ADR-011 — Only the CEO writes the decision
+
+`decide approve` and `decide reject` append `company/DECISION_LOG.md` and the Major Decisions section of `company/COMPANY_STATE.md`. The pending memo file is left as the proposal. A second record for the same memo is refused. The command does not call a provider, change unknown fields, or authorize spending.

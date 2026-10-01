@@ -2,10 +2,12 @@
 
 `python -m app.main` prints status and does not call a provider.
 `python -m app.main ask "..."` runs independent analyses, cross-examination, evidence resolution, a red-team pass, and a pending decision memo.
+`python -m app.main decide <ceo_decision.json> approve|reject [reasoning]` records that decision locally.
 """
 
 from __future__ import annotations
 
+import json
 import os
 import sys
 from pathlib import Path
@@ -15,6 +17,7 @@ from app.config import env_flag, env_value, load_env_file
 from app.council.debate import examine
 from app.council.independent import run_independent_round
 from app.council.synthesis import conclude
+from app.memory.decisions import record_ceo_decision
 from app.providers.base import ProviderError
 from app.providers.registry import router_from_env
 
@@ -39,12 +42,15 @@ def main(argv: list[str] | None = None) -> int:
         return 1
     if args and args[0] == "ask":
         return _ask(args[1:])
+    if args and args[0] == "decide":
+        return _decide(args[1:])
     return _status()
 
 
 def _status() -> int:
     print(f"AI Founding Council V1 (phase {PHASE}, version {__version__})")
     print("Rounds: independent analysis, cross-examination, evidence resolution, red-team pass, pending memo.")
+    print("CEO recording: python -m app.main decide <ceo_decision.json> approve|reject [reasoning]")
     blocked = False
     for name, key_name, model_name, flag_name in _PROVIDER_FLAGS:
         ready = bool(env_value(key_name) and env_value(model_name) and env_flag(flag_name))
@@ -127,6 +133,28 @@ def _ask(words: list[str]) -> int:
     print("Estimated cost USD: unverified")
     print(f"Saved: {decision.path}")
     return 0 if available else 2
+
+
+def _decide(words: list[str]) -> int:
+    if len(words) < 2 or words[1].lower() not in {"approve", "reject"}:
+        print(
+            'Usage: python -m app.main decide <ceo_decision.json> approve|reject [reasoning]',
+            file=sys.stderr,
+        )
+        return 2
+    decision = "APPROVED" if words[1].lower() == "approve" else "REJECTED"
+    reasoning = " ".join(words[2:]).strip()
+    try:
+        recorded = record_ceo_decision(ROOT, Path(words[0]), decision, reasoning)
+    except (OSError, ValueError, json.JSONDecodeError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(f"CEO DECISION: {recorded.ceo_decision}")
+    print(f"Decision ID: {recorded.decision_id}")
+    print(f"Saved: {recorded.record_path}")
+    print("Company state and the decision log now include this decision.")
+    print("Unknown fields were not changed. No spend was authorized.")
+    return 0
 
 
 if __name__ == "__main__":

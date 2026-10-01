@@ -2,7 +2,7 @@
 
 Local, CEO-controlled software that runs a council of specialized model roles against one question. The human founder is the CEO. Agents research, critique, and recommend. They do not decide.
 
-Phase 5 resolves only stated disputes, sends one red-team pass against the thesis under test, and writes a CEO decision memo that stays `PENDING`. The memo does not update company state. Agreement is not used to choose the thesis or to close a dispute. API keys stay empty until you add them.
+Phase 6 records an explicit CEO approval or rejection against a pending memo. `ask` still leaves the memo `PENDING` and does not update company state. Agreement is not used to choose the thesis or to close a dispute. API keys stay empty until you add them.
 
 Default routes:
 
@@ -64,7 +64,14 @@ That command calls a provider only when that provider's key, model, and `*_API_A
 
 ## Current phase
 
-Phase 5 writes a pending decision memo after evidence resolution and a red-team pass. Company state and the decision log are not updated. Live calls stay blocked until you add keys and set each authorization flag.
+Phase 6 records a CEO decision with a local command. It does not call a model.
+
+```powershell
+python -m app.main decide council_logs\<session>_decision\ceo_decision.json approve "Reason, if you want one recorded."
+python -m app.main decide council_logs\<session>_decision\ceo_decision.json reject
+```
+
+`approve` and `reject` append the decision log and the Major Decisions section. Unknown fields stay unknown. The AI budget stays $0. A second record for the same memo is refused. Live calls stay blocked until you add keys and set each authorization flag.
 
 ## Security
 
@@ -75,4 +82,4 @@ Phase 5 writes a pending decision memo after evidence resolution and a red-team 
 
 ## Limitations
 
-Phase 5 writes the pending memo. Applying a CEO approval to the decision log and company state is not implemented. Live calls were not made. Keys are still empty. Cursor requires the separate `cursor-sdk` package before a live CTO call.
+Recording a decision does not authorize spending, customer contact, or a production change. Live calls were not made. Keys are still empty. Cursor requires the separate `cursor-sdk` package before a live CTO call.

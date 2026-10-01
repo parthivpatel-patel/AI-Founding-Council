@@ -14,6 +14,10 @@ V1 is a local CLI. Speed comes from a short path, not from extra infrastructure.
 - Keep company state in local files. Do not add a database in V1.
 - Skip agents whose provider is unavailable and record `AGENT_UNAVAILABLE`.
 
+## Phase 2 call
+
+The strategist is the only working agent. `ModelRouter` sends the `strategy` task to `OpenAIProvider`. The adapter posts to `https://api.openai.com/v1/responses` with `instructions`, `input`, `store: false`, and `text.format` strict JSON schema. It reads assistant text from output items of type `message`, not from a fixed array index. Token counts come from `usage.input_tokens` and `usage.output_tokens` when the response includes them. `estimated_cost_usd` stays null.
+
 A failed or slow provider must not block the agents that are still available.
 
 ## Package layout

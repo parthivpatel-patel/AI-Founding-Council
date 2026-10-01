@@ -77,12 +77,16 @@ class ScaffoldTests(unittest.TestCase):
         self.assertIn(".venv/", ignored)
 
     def test_env_example_has_empty_keys(self) -> None:
+        keys: list[str] = []
         for line in (ROOT / ".env.example").read_text(encoding="utf-8").splitlines():
             if not line or line.startswith("#"):
                 continue
             key, _, value = line.partition("=")
-            self.assertTrue(key.endswith("_API_KEY"))
+            keys.append(key.strip())
             self.assertEqual(value.strip(), "")
+        self.assertIn("OPENAI_API_KEY", keys)
+        self.assertIn("OPENAI_MODEL", keys)
+        self.assertIn("OPENAI_API_AUTHORIZED", keys)
 
     def test_company_state_has_required_sections(self) -> None:
         text = (ROOT / "company" / "COMPANY_STATE.md").read_text(encoding="utf-8")
@@ -117,8 +121,9 @@ class ScaffoldTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertIn("phase 1", completed.stdout)
-        self.assertIn("Providers connected: none", completed.stdout)
+        self.assertIn("phase 2", completed.stdout)
+        self.assertIn("Live API calls: blocked", completed.stdout)
+        self.assertNotIn("Bearer ", completed.stdout)
 
 
 if __name__ == "__main__":

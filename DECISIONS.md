@@ -22,4 +22,8 @@ The first working milestone is one verified provider and one agent. Remaining pr
 
 ## ADR-006 — Stubs are not implementations
 
-Phase 1 modules under `app/agents`, `app/providers`, `app/council`, `app/memory`, and `app/schemas` mark the file tree. They do not call models. A module is implemented only when tests show that behavior.
+A module is implemented only when tests show that behavior. Anthropic, Gemini, xAI, debate, and synthesis are still stubs.
+
+## ADR-007 — One OpenAI call, no invented price
+
+The strategist calls OpenAI through `POST https://api.openai.com/v1/responses` with `store` set to false and a strict JSON schema. The model id comes from `OPENAI_MODEL`. The call is not sent unless `OPENAI_API_AUTHORIZED=1`. Estimated cost stays null until a price table is verified. Malformed output is saved as a failure and is not sent back to the model, because a second call would spend quota again.

@@ -2,7 +2,7 @@
 
 Local, CEO-controlled software that runs a council of specialized model roles against one question. The human founder is the CEO. Agents research, critique, and recommend. They do not decide.
 
-Phase 1 is scaffolding only. No model provider is connected.
+Phase 2 runs one strategist agent through the OpenAI Responses API. No other provider is connected. A live call is sent only after the CEO sets an API key, a model id, and `OPENAI_API_AUTHORIZED=1`.
 
 ## Architecture
 
@@ -44,11 +44,23 @@ python -m unittest discover -s tests -v
 
 On macOS or Linux, activate with `source .venv/bin/activate`.
 
-Put API keys only in `.env`. `.env` is gitignored. Phase 1 does not read keys and does not call an API.
+Put API keys only in `.env`. `.env` is gitignored.
+
+```powershell
+python -m app.main ask "What should we investigate next?"
+```
+
+That command calls OpenAI only when all three are set:
+
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL` (check the current model id and price first)
+- `OPENAI_API_AUTHORIZED=1`
+
+Estimated cost is recorded as unverified. This project does not invent a price and does not assume the call is free.
 
 ## Current phase
 
-Phase 1 scaffold is in place. Later phases add schemas, one verified provider, one agent, then the rest of the council. Do not treat empty modules as a working council.
+Phase 2 is the strategist path: company state, one provider call, schema validation, and a saved JSON file. Debate, the other agents, and the decision memo are not implemented.
 
 ## Security
 
@@ -59,6 +71,8 @@ Phase 1 scaffold is in place. Later phases add schemas, one verified provider, o
 
 ## Limitations
 
-- No providers, agents, debate, synthesis, or decision memo yet.
-- Python on this machine is 3.14.7. Provider SDKs must be checked for 3.14 support before they are added.
+- Live OpenAI was not called during Phase 2 because no API key was configured.
+- Anthropic, Gemini, and xAI are not connected.
+- Debate, synthesis, and CEO decision recording are not implemented.
+- The adapter uses the documented REST endpoint, not the OpenAI Python SDK, so it does not depend on SDK support for Python 3.14.
 - Free tiers are not assumed to be permanent.

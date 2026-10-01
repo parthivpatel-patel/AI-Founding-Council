@@ -22,8 +22,12 @@ The first working milestone is one verified provider and one agent. Remaining pr
 
 ## ADR-006 — Stubs are not implementations
 
-A module is implemented only when tests show that behavior. Anthropic, Gemini, xAI, debate, and synthesis are still stubs.
+A module is implemented only when tests show that behavior. Debate and synthesis are still stubs.
 
-## ADR-007 — One OpenAI call, no invented price
+## ADR-007 — No invented price
 
-The strategist calls OpenAI through `POST https://api.openai.com/v1/responses` with `store` set to false and a strict JSON schema. The model id comes from `OPENAI_MODEL`. The call is not sent unless `OPENAI_API_AUTHORIZED=1`. Estimated cost stays null until a price table is verified. Malformed output is saved as a failure and is not sent back to the model, because a second call would spend quota again.
+Estimated cost stays null until a price table is verified. A call is not sent unless that provider's authorization flag is set. Malformed output is saved as a failure and is not sent back to the model.
+
+## ADR-008 — Four independent calls, six swappable providers
+
+Round 1 runs the strategist, researcher, red team, and contrarian at the same time. None of them receives another agent's answer. The default routes are OpenAI, Gemini, Anthropic, and xAI. NVIDIA NIM and the Cursor agent SDK are adapters a role can opt into. A missing or unauthorized provider is recorded as `AGENT_UNAVAILABLE` and does not cancel the other calls.

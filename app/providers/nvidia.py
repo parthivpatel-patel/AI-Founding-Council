@@ -1,7 +1,8 @@
-"""Grok adapter for POST /v1/responses.
+"""NVIDIA NIM adapter for POST /v1/chat/completions.
 
-Verified against the xAI Responses API guide, including store: false:
-https://docs.x.ai/developers/model-capabilities/text/generate-text
+Verified against the NVIDIA API catalog:
+https://integrate.api.nvidia.com/v1/chat/completions
+https://docs.api.nvidia.com/nim/reference/llm-apis
 """
 
 from __future__ import annotations
@@ -24,17 +25,17 @@ from app.providers.base import (
 from app.providers.http import (
     UrllibTransport,
     monotonic_ms,
-    output_text,
     post_for_model,
     require_model,
     schema_instruction,
 )
 
-RESPONSES_URL = "https://api.x.ai/v1/responses"
+CHAT_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+_MAX_TOKENS = 2048
 
 
-class XAIProvider:
-    name = "xai"
+class NvidiaProvider:
+    name = "nvidia"
 
     def __init__(
         self,
@@ -54,18 +55,20 @@ class XAIProvider:
         self._sleep = sleep
 
     @classmethod
-    def from_env(cls) -> XAIProvider:
-        key, model, authorized, timeout = provider_settings("XAI_API_KEY", "XAI_MODEL", "XAI_API_AUTHORIZED")
+    def from_env(cls) -> NvidiaProvider:
+        key, model, authorized, timeout = provider_settings("NVIDIA_API_KEY", "NVIDIA_MODEL", "NVIDIA_API_AUTHORIZED")
         return cls(api_key=key, model=model, authorized=authorized, timeout_seconds=timeout)
 
     def generate(self, request: GenerationRequest) -> GenerationResult:
         self._ensure_ready()
-        model = require_model(self._model)
+        model = require_model(self._model, allow_slash=True)
         started = time.perf_counter()
         body = {
             "model": model,
-            "store": False,
-            "input": [
+            "stream": False,
+            "max_tokens": _MAX_TOKENS,
+            "response_format": {"type": "json_object"},
+            "messages": [
                 {"role": "system", "content": request.instructions + "\n\n" + schema_instruction(request.json_schema)},
                 {"role": "user", "content": request.user_input},
             ],
@@ -74,7 +77,7 @@ class XAIProvider:
         try:
             payload, _headers = post_for_model(
                 transport=self._transport,
-                url=RESPONSES_URL,
+                url=CHAT_URL,
                 headers=headers,
                 body=body,
                 timeout=self._timeout,
@@ -84,23 +87,23 @@ class XAIProvider:
         except ProviderError as exc:
             exc.usage = self._usage(request, started, False, "request_failed", model)
             raise
-        text = output_text(payload)
+        text = _choice_text(payload)
         response_model = payload.get("model") if isinstance(payload.get("model"), str) else model
         input_tokens, output_tokens = _usage_tokens(payload)
         if not text.strip():
             usage = self._usage(request, started, False, "empty_response", response_model, input_tokens, output_tokens)
-            raise MalformedResponseError("xAI response contained no output text", usage)
+            raise MalformedResponseError("NVIDIA response contained no message text", usage)
         usage = self._usage(request, started, True, "", response_model, input_tokens, output_tokens)
         response_id = payload.get("id") if isinstance(payload.get("id"), str) else None
         return GenerationResult(text=text, model=response_model, provider=self.name, response_id=response_id, usage=usage)
 
     def _ensure_ready(self) -> None:
         if not self._api_key:
-            raise ProviderConfigError("XAI_API_KEY is not set")
+            raise ProviderConfigError("NVIDIA_API_KEY is not set")
         if not self._model:
-            raise ProviderConfigError("XAI_MODEL is not set. Choose a model after checking current price and quota.")
+            raise ProviderConfigError("NVIDIA_MODEL is not set. Choose a model after checking current price and quota.")
         if not self._authorized:
-            raise AuthorizationRequired("Set XAI_API_AUTHORIZED=1 after the CEO authorizes Grok. No request was sent.")
+            raise AuthorizationRequired("Set NVIDIA_API_AUTHORIZED=1 after the CEO authorizes NVIDIA. No request was sent.")
 
     def _usage(
         self,
@@ -127,11 +130,27 @@ class XAIProvider:
         )
 
 
+def _choice_text(payload: dict[str, Any]) -> str:
+    choices = payload.get("choices")
+    if not isinstance(choices, list) or not choices or not isinstance(choices[0], dict):
+        return ""
+    message = choices[0].get("message")
+    if not isinstance(message, dict):
+        return ""
+    content = message.get("content")
+    if isinstance(content, str):
+        return content
+    if isinstance(content, list):
+        parts = [block.get("text", "") for block in content if isinstance(block, dict) and isinstance(block.get("text"), str)]
+        return "".join(parts)
+    return ""
+
+
 def _usage_tokens(payload: dict[str, Any]) -> tuple[int | None, int | None]:
     usage = payload.get("usage")
     if not isinstance(usage, dict):
         return None, None
-    return _int_or_none(usage.get("input_tokens")), _int_or_none(usage.get("output_tokens"))
+    return _int_or_none(usage.get("prompt_tokens")), _int_or_none(usage.get("completion_tokens"))
 
 
 def _int_or_none(value: Any) -> int | None:

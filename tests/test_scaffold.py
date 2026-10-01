@@ -10,6 +10,13 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 
+_ENV_DEFAULTS = {
+    "STRATEGIST_PROVIDER": "openai",
+    "RESEARCHER_PROVIDER": "gemini",
+    "RED_TEAM_PROVIDER": "anthropic",
+    "CONTRARIAN_PROVIDER": "xai",
+}
+
 REQUIRED_PATHS = (
     "app/__init__.py",
     "app/main.py",
@@ -83,10 +90,18 @@ class ScaffoldTests(unittest.TestCase):
                 continue
             key, _, value = line.partition("=")
             keys.append(key.strip())
-            self.assertEqual(value.strip(), "")
-        self.assertIn("OPENAI_API_KEY", keys)
-        self.assertIn("OPENAI_MODEL", keys)
-        self.assertIn("OPENAI_API_AUTHORIZED", keys)
+            self.assertEqual(value.strip(), _ENV_DEFAULTS.get(key.strip(), ""))
+        for name in (
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "GEMINI_API_KEY",
+            "XAI_API_KEY",
+            "NVIDIA_API_KEY",
+            "CURSOR_API_KEY",
+            "OPENAI_MODEL",
+            "OPENAI_API_AUTHORIZED",
+        ):
+            self.assertIn(name, keys)
 
     def test_company_state_has_required_sections(self) -> None:
         text = (ROOT / "company" / "COMPANY_STATE.md").read_text(encoding="utf-8")
@@ -121,7 +136,7 @@ class ScaffoldTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertIn("phase 2", completed.stdout)
+        self.assertIn("phase 3", completed.stdout)
         self.assertIn("Live API calls: blocked", completed.stdout)
         self.assertNotIn("Bearer ", completed.stdout)
 

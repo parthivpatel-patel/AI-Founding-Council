@@ -337,7 +337,18 @@ class EnvAndCliTests(unittest.TestCase):
                 os.environ["OPENAI_MODEL"] = previous
 
     def test_ask_without_authorization_does_not_call_the_network(self) -> None:
+        import tempfile
+
+        isolated = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: __import__("shutil").rmtree(isolated, ignore_errors=True))
+        company = isolated / "company"
+        company.mkdir()
+        (company / "COMPANY_STATE.md").write_text(
+            (ROOT / "company" / "COMPANY_STATE.md").read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
         env = os.environ.copy()
+        env["COUNCIL_ROOT"] = str(isolated)
         for name in ("OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_API_AUTHORIZED"):
             env[name] = ""
         completed = subprocess.run(
@@ -348,8 +359,10 @@ class EnvAndCliTests(unittest.TestCase):
             capture_output=True,
             text=True,
         )
-        self.assertEqual(completed.returncode, 2, completed.stderr)
-        self.assertIn("OPENAI_API_KEY", completed.stderr)
+        self.assertEqual(completed.returncode, 2, completed.stderr + completed.stdout)
+        self.assertIn("OPENAI_API_KEY", completed.stdout)
+        self.assertIn("AGENT_UNAVAILABLE", completed.stdout)
+        self.assertNotIn("Bearer ", completed.stdout)
         self.assertNotIn("Bearer ", completed.stderr)
 
 

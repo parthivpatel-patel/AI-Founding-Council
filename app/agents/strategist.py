@@ -26,7 +26,7 @@ Core question to keep in view: if this works, what could this become?
 State the opportunity, the assumptions required, the risks, and the cheapest next learning step. Do not recommend spending money, contacting customers, or any other gated action as something the system should do by itself.
 """
 
-REASON = "Phase 2 uses one configured OpenAI model for the strategist. No other provider is connected."
+REASON = "Strategist is routed to the configured strategy provider."
 
 
 def ask_strategist(question: str, *, provider: ModelProvider, root: Path) -> AgentResult:

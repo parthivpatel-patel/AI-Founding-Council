@@ -2,7 +2,16 @@
 
 Local, CEO-controlled software that runs a council of specialized model roles against one question. The human founder is the CEO. Agents research, critique, and recommend. They do not decide.
 
-Phase 2 runs one strategist agent through the OpenAI Responses API. No other provider is connected. A live call is sent only after the CEO sets an API key, a model id, and `OPENAI_API_AUTHORIZED=1`.
+Phase 3 runs four agents independently: strategist, researcher, red team, and contrarian. They do not see each other's answers. Debate is not implemented.
+
+Default routes:
+
+- Strategist: OpenAI
+- Researcher: Gemini
+- Red team: Anthropic
+- Contrarian: xAI
+
+NVIDIA and Cursor adapters are included. Point a role at one with `STRATEGIST_PROVIDER`, `RESEARCHER_PROVIDER`, `RED_TEAM_PROVIDER`, or `CONTRARIAN_PROVIDER`. Cursor is an agent runtime, not a chat endpoint, and stays blocked until you authorize it.
 
 ## Architecture
 
@@ -50,17 +59,11 @@ Put API keys only in `.env`. `.env` is gitignored.
 python -m app.main ask "What should we investigate next?"
 ```
 
-That command calls OpenAI only when all three are set:
-
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL` (check the current model id and price first)
-- `OPENAI_API_AUTHORIZED=1`
-
-Estimated cost is recorded as unverified. This project does not invent a price and does not assume the call is free.
+That command calls a provider only when that provider's key, model, and `*_API_AUTHORIZED=1` are set. Agents whose provider is not authorized are saved as `AGENT_UNAVAILABLE`. The others still run. Estimated cost is recorded as unverified.
 
 ## Current phase
 
-Phase 2 is the strategist path: company state, one provider call, schema validation, and a saved JSON file. Debate, the other agents, and the decision memo are not implemented.
+Phase 3 runs the four independent analyses and saves each result. Debate, synthesis, and CEO decision recording are not implemented.
 
 ## Security
 
@@ -71,8 +74,4 @@ Phase 2 is the strategist path: company state, one provider call, schema validat
 
 ## Limitations
 
-- Live OpenAI was not called during Phase 2 because no API key was configured.
-- Anthropic, Gemini, and xAI are not connected.
-- Debate, synthesis, and CEO decision recording are not implemented.
-- The adapter uses the documented REST endpoint, not the OpenAI Python SDK, so it does not depend on SDK support for Python 3.14.
-- Free tiers are not assumed to be permanent.
+Phase 3 is the independent round. Debate, synthesis, and CEO decision recording are not implemented. Live calls were not made while building this phase because no API keys were present. Cursor requires the separate `cursor-sdk` package and is not installed by default.

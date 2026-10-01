@@ -31,3 +31,12 @@ def env_flag(name: str) -> bool:
 
 def env_value(name: str) -> str:
     return os.environ.get(name, "").strip()
+
+
+def provider_settings(key_name: str, model_name: str, flag_name: str) -> tuple[str, str, bool, float]:
+    timeout_raw = env_value("PROVIDER_TIMEOUT_SECONDS") or "25"
+    try:
+        timeout = float(timeout_raw)
+    except ValueError:
+        timeout = 25.0
+    return env_value(key_name), env_value(model_name), env_flag(flag_name), min(max(timeout, 1.0), 60.0)

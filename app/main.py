@@ -1,24 +1,32 @@
 """CLI for the AI Founding Council.
 
 `python -m app.main` prints status and does not call a provider.
-`python -m app.main ask "..."` runs the strategist when the CEO has authorized OpenAI.
+`python -m app.main ask "..."` runs four independent analyses. No debate.
 """
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 
 from app import PHASE, __version__
-from app.agents.strategist import ask_strategist
 from app.config import env_flag, env_value, load_env_file
+from app.council.independent import run_independent_round
 from app.providers.base import ProviderError
-from app.providers.openai import OpenAIProvider
-from app.providers.router import ModelRouter
-from app.schemas.messages import render_analysis
+from app.providers.registry import router_from_env
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ["COUNCIL_ROOT"]) if os.environ.get("COUNCIL_ROOT", "").strip() else Path(__file__).resolve().parents[1]
 COMPANY_STATE_PATH = ROOT / "company" / "COMPANY_STATE.md"
+
+_PROVIDER_FLAGS = (
+    ("openai", "OPENAI_API_KEY", "OPENAI_MODEL", "OPENAI_API_AUTHORIZED"),
+    ("anthropic", "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL", "ANTHROPIC_API_AUTHORIZED"),
+    ("gemini", "GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_API_AUTHORIZED"),
+    ("xai", "XAI_API_KEY", "XAI_MODEL", "XAI_API_AUTHORIZED"),
+    ("nvidia", "NVIDIA_API_KEY", "NVIDIA_MODEL", "NVIDIA_API_AUTHORIZED"),
+    ("cursor", "CURSOR_API_KEY", "CURSOR_MODEL", "CURSOR_API_AUTHORIZED"),
+)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -33,19 +41,20 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _status() -> int:
-    key_set = bool(env_value("OPENAI_API_KEY"))
-    model_set = bool(env_value("OPENAI_MODEL"))
-    authorized = env_flag("OPENAI_API_AUTHORIZED")
-    if key_set and model_set and authorized:
-        live = "authorized by CEO flag"
-    else:
-        live = "blocked until OPENAI_API_KEY, OPENAI_MODEL, and OPENAI_API_AUTHORIZED=1 are set"
     print(f"AI Founding Council V1 (phase {PHASE}, version {__version__})")
-    print("Strategist agent and OpenAI adapter are implemented.")
-    print("Provider adapter: OpenAI Responses API POST /v1/responses")
-    print(f"Live API calls: {live}")
-    print("Other providers: not connected")
-    print("Council session: not available until a later phase")
+    print("Independent round: strategist, researcher, red team, contrarian. No debate.")
+    blocked = False
+    for name, key_name, model_name, flag_name in _PROVIDER_FLAGS:
+        ready = bool(env_value(key_name) and env_value(model_name) and env_flag(flag_name))
+        if not ready:
+            blocked = True
+        print(f"{name}: {'authorized' if ready else 'blocked'}")
+    if blocked:
+        print("Live API calls: blocked until each provider key, model, and authorization flag are set")
+    else:
+        print("Live API calls: authorized by CEO flags")
+    print("Default routes: strategy=openai research=gemini red_team=anthropic contrarian=xai")
+    print("NVIDIA and Cursor are available as role overrides.")
     return 0
 
 
@@ -55,16 +64,23 @@ def _ask(words: list[str]) -> int:
         print('Usage: python -m app.main ask "question"', file=sys.stderr)
         return 2
     try:
-        provider = OpenAIProvider.from_env()
-        result = ask_strategist(question, provider=ModelRouter({"openai": provider}).select("strategy"), root=ROOT)
+        results = run_independent_round(question, router=router_from_env(ROOT), root=ROOT)
     except (ProviderError, OSError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    print(render_analysis(result.analysis))
-    print(f"Latency ms: {result.usage.latency_ms}")
+    available = 0
+    for result in results:
+        label = "READY" if result.available else "AGENT_UNAVAILABLE"
+        print(f"[{result.role}] {label}")
+        print(result.detail)
+        if result.path is not None:
+            print(f"Saved: {result.path}")
+        if result.available:
+            available += 1
+        print()
     print("Estimated cost USD: unverified")
-    print(f"Saved: {result.path}")
-    return 0
+    print("Debate: not run")
+    return 0 if available else 2
 
 
 if __name__ == "__main__":

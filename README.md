@@ -2,7 +2,7 @@
 
 Local, CEO-controlled software that runs a council of specialized model roles against one question. The human founder is the CEO. Agents research, critique, and recommend. They do not decide.
 
-Phase 4 runs five roles. Round 1 is independent. Round 2 shows each available agent the other round-1 analyses and asks for agreements and disagreements. A local step turns explicit disagreements into an unverified dispute list. Agreement is not a vote and is not evidence. Synthesis is not implemented.
+Phase 5 resolves only stated disputes, sends one red-team pass against the thesis under test, and writes a CEO decision memo that stays `PENDING`. The memo does not update company state. Agreement is not used to choose the thesis or to close a dispute. API keys stay empty until you add them.
 
 Default routes:
 
@@ -64,7 +64,7 @@ That command calls a provider only when that provider's key, model, and `*_API_A
 
 ## Current phase
 
-Phase 4 adds cross-examination and a dispute list. Synthesis and the CEO decision memo are not implemented. Live calls stay blocked until you add keys and set each authorization flag.
+Phase 5 writes a pending decision memo after evidence resolution and a red-team pass. Company state and the decision log are not updated. Live calls stay blocked until you add keys and set each authorization flag.
 
 ## Security
 
@@ -75,4 +75,4 @@ Phase 4 adds cross-examination and a dispute list. Synthesis and the CEO decisio
 
 ## Limitations
 
-Phase 4 adds cross-examination and disagreement detection. Synthesis and CEO decision recording are not implemented. Live calls were not made. Keys are still empty. Cursor requires the separate `cursor-sdk` package before a live CTO call.
+Phase 5 writes the pending memo. Applying a CEO approval to the decision log and company state is not implemented. Live calls were not made. Keys are still empty. Cursor requires the separate `cursor-sdk` package before a live CTO call.

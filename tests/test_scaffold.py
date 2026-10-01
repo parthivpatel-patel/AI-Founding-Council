@@ -137,7 +137,7 @@ class ScaffoldTests(unittest.TestCase):
             text=True,
         )
         self.assertEqual(completed.returncode, 0, completed.stderr)
-        self.assertIn("phase 4", completed.stdout)
+        self.assertIn("phase 5", completed.stdout)
         self.assertIn("cto=cursor", completed.stdout)
         self.assertIn("Live API calls: blocked", completed.stdout)
         self.assertNotIn("Bearer ", completed.stdout)

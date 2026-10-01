@@ -1,7 +1,7 @@
 """CLI for the AI Founding Council.
 
 `python -m app.main` prints status and does not call a provider.
-`python -m app.main ask "..."` runs independent analyses, then cross-examination.
+`python -m app.main ask "..."` runs independent analyses, cross-examination, evidence resolution, a red-team pass, and a pending decision memo.
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ from app import PHASE, __version__
 from app.config import env_flag, env_value, load_env_file
 from app.council.debate import examine
 from app.council.independent import run_independent_round
+from app.council.synthesis import conclude
 from app.providers.base import ProviderError
 from app.providers.registry import router_from_env
 
@@ -43,7 +44,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def _status() -> int:
     print(f"AI Founding Council V1 (phase {PHASE}, version {__version__})")
-    print("Round 1 is independent. Round 2 is cross-examination. No synthesis.")
+    print("Rounds: independent analysis, cross-examination, evidence resolution, red-team pass, pending memo.")
     blocked = False
     for name, key_name, model_name, flag_name in _PROVIDER_FLAGS:
         ready = bool(env_value(key_name) and env_value(model_name) and env_flag(flag_name))
@@ -68,6 +69,7 @@ def _ask(words: list[str]) -> int:
         router = router_from_env(ROOT)
         round1 = run_independent_round(question, router=router, root=ROOT)
         examination = examine(question, round1, router=router, root=ROOT)
+        decision = conclude(question, round1, examination.disputes, router=router, root=ROOT)
     except (ProviderError, OSError, ValueError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
@@ -105,8 +107,25 @@ def _ask(words: list[str]) -> int:
         print("No disagreement was detected.")
         print()
     print("Model agreement is not evidence.")
+    print("EVIDENCE RESOLUTION")
+    if decision.resolutions:
+        for item in decision.resolutions:
+            print(f"{item.dispute_id}: {item.status}")
+            print(item.assessment)
+            print(item.required_action)
+            print()
+    else:
+        print("No dispute was stated, so no extra research call was made.")
+        print()
+    print("RED TEAM PASS")
+    print(decision.thesis.reason)
+    print(decision.red_team.strongest_counterargument)
+    print()
+    print("CEO DECISION MEMO")
+    print(f"CEO DECISION: {decision.memo.ceo_decision}")
+    print(decision.memo.recommended_next_action)
     print("Estimated cost USD: unverified")
-    print(f"Saved: {examination.path}")
+    print(f"Saved: {decision.path}")
     return 0 if available else 2
 
 

@@ -35,3 +35,7 @@ Round 1 runs the strategist, researcher, red team, and contrarian at the same ti
 ## ADR-009 — Cross-examination is not a vote
 
 Round 2 runs only for agents that finished round 1. Each one sees the other round-1 analyses and none of the round-2 answers. Disputes are created only from disagreements an agent explicitly states. Matching claims are merged into one `UNVERIFIED` dispute. An empty dispute list means no disagreement was stated. It does not mean the claim is true. Cursor is the default CTO provider.
+
+## ADR-010 — The memo stays pending
+
+Evidence resolution runs only for stated disputes and cannot mark them resolved. One red-team pass attacks the strategist thesis when that agent answered, otherwise the first thesis that exists. Agreement is not the selection rule. The decision memo is assembled from those records with `create_pending_memo`. Company state and the decision log stay unchanged.

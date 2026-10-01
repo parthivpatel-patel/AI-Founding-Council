@@ -27,9 +27,18 @@ def save_agent_result(root: Path, role: str, payload: dict[str, Any], usage: Usa
 
 
 def save_session_document(root: Path, filename: str, payload: dict[str, Any]) -> Path:
+    directory = open_session(root, "session")
+    return write_json(directory, filename, payload)
+
+
+def open_session(root: Path, label: str) -> Path:
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
-    directory = root / "council_logs" / f"{stamp}_session"
+    directory = root / "council_logs" / f"{stamp}_{label}"
     directory.mkdir(parents=True, exist_ok=False)
+    return directory
+
+
+def write_json(directory: Path, filename: str, payload: dict[str, Any]) -> Path:
     path = directory / filename
     path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     return path
